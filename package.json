@@ -1,0 +1,16 @@
+{
+  "name": "liveleader-skill-chat-demo",
+  "version": "1.0.0",
+  "main": "ChatClient.ts",
+  "scripts": {
+    "start": "ts-node ChatClient.ts"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.12",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
