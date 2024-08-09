@@ -5,7 +5,6 @@ let LOCAL = process.env.LOCAL;
 export interface ChatMessage {
   content: string;
   role: "user" | "assistant";
-  requestId?: string;
   sources?: Source[];
 }
 
@@ -14,12 +13,13 @@ export interface Options {
   // The skill to query: required
   skillId: string;
 
+  // Callback on each response chunk
   onResponse?: (updatedMessage: ChatMessage, chunk?: Chunk) => void;
 
   // Use your own prompt/system message
   prompt?: string;
 
-  // Append to the existing skill prompt
+  // Append to the existing skill prompt (false = replace)
   appendPrompt?: boolean;
 
   // Use partner skill, if available
@@ -59,16 +59,13 @@ export class Chat {
 
   async send(message: string): Promise<ChatMessage> {
 
-    let atLeastOneChunk = false;
     let requestId = Math.random().toString(36).substring(7);
+    // An empty response we can update
+    let responseMsg: ChatMessage = { content: "", role: "assistant" };
+
     let onDone = this.client.listen(requestId, (chunk) => {
-      for (const message of this.messages) {
-        if (message.requestId == requestId) {
-          message.content += chunk.delta;
-          this.options.onResponse?.(message, chunk);
-          atLeastOneChunk = true;
-        }
-      }
+      responseMsg.content += chunk.delta;
+      this.options.onResponse?.(responseMsg, chunk);
     });
 
     // Add our new message
@@ -76,9 +73,7 @@ export class Chat {
 
     let postMessages = [...this.messages];
 
-    // Also add an initial, empty response we can update
-    let msg: ChatMessage = { content: "", role: "assistant", requestId };
-    this.messages.push(msg);
+    this.messages.push(responseMsg);
 
     let server = `https://api.${this.client.domain}`;
     if (LOCAL) {
@@ -103,18 +98,15 @@ export class Chat {
     let data: any = await response.json();
     let finalMessage = data.message as ChatMessage;
 
-    if (!atLeastOneChunk) {
-      // Send a chunk with the full message, in those cases where we don't get a chunk
+    if (!responseMsg.content) {
+      // We haven't received any chunks, so send the final message as single chunk
       this.options.onResponse?.(finalMessage, { index: 0, delta: finalMessage.content, requestId });
     }
 
     // Update the message with the final response
-    for (const message of this.messages) {
-      if (message.requestId == requestId) {
-        Object.assign(message, { ...finalMessage, requestId: undefined });
-        this.options.onResponse?.(message);
-      }
-    }
+    Object.assign(responseMsg, { ...finalMessage, requestId: undefined });
+
+    this.options.onResponse?.(responseMsg); // No chunk here
 
     return finalMessage;
   }

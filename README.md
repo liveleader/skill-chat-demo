@@ -1,19 +1,19 @@
-# Prerequisites
+# Getting started
 
 1. Create an API token in LiveLeader
 2. Find the ID of a skill you'd like to test
-3. Se the environment variables below
+3. Set environment variables below
 4. Run the script
 5. Chat with the assistant
 
 # Running the demo
 
-```
-npm install
-
+```shell
 export DOMAIN=visma.chat
 export TOKEN=MY-TOKEN
 export SKILL_ID=MY-SKILL-ID
+
+npm install
 npm run start
 ```
 
