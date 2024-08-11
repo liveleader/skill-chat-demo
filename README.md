@@ -11,6 +11,7 @@
 ```shell
 export DOMAIN=visma.chat
 export TOKEN=MY-TOKEN
+# Skill-ID is optional
 export SKILL_ID=MY-SKILL-ID
 
 npm install

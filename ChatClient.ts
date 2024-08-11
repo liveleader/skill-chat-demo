@@ -8,10 +8,10 @@ export interface ChatMessage {
   sources?: Source[];
 }
 
-export interface Options {
+export interface ChatOptions {
 
-  // The skill to query: required
-  skillId: string;
+  // The skill to query, if any
+  skillId?: string;
 
   // Callback on each response chunk
   onResponse?: (updatedMessage: ChatMessage, chunk?: Chunk) => void;
@@ -19,11 +19,7 @@ export interface Options {
   // Use your own prompt/system message
   prompt?: string;
 
-  // Append to the existing skill prompt (false = replace)
-  appendPrompt?: boolean;
-
-  // Use partner skill, if available
-  partnerId?: string;
+  model?: string;
 
 }
 
@@ -50,9 +46,9 @@ export class Chat {
 
   client: ChatClient;
   messages: ChatMessage[] = [];
-  options: Options;
+  options: ChatOptions;
 
-  constructor(client: ChatClient, options: Options) {
+  constructor(client: ChatClient, options: ChatOptions) {
     this.client = client;
     this.options = options;
   }
@@ -79,7 +75,12 @@ export class Chat {
     if (LOCAL) {
       server = "http://localhost:8080";
     }
-    let url = server + "/v1/skills/" + this.options.skillId + "/chat";
+    let url: string;
+    if (this.options.skillId) {
+      url = server + "/v1/skills/" + this.options.skillId + "/chat";
+    } else {
+      url = server + "/v1/ai/chat";
+    }
     let response = await fetch(url, {
       method: "POST",
       headers: {
@@ -167,7 +168,7 @@ export class ChatClient {
     };
   }
 
-  newChat(options: Options) {
+  newChat(options: ChatOptions) {
     return new Chat(this, options);
   }
 
@@ -196,17 +197,18 @@ async function demo() {
 
   let token = process.env.TOKEN;
   let domain = process.env.DOMAIN || "visma.chat"; // LiveLeader service domain
-  let skillId = process.env.SKILL_ID;
+  let skillId = process.env.SKILL_ID; // Optional
 
-  if (!token || !skillId) {
-    console.error("Please set TOKEN and SKILL_ID environment variables");
+  if (!token) {
+    console.error("Please set TOKEN environment variable");
     process.exit(1);
   }
 
-  let options:Options = {
+  let options:ChatOptions = {
     skillId: skillId,
     // partnerId: "1234",
     onResponse: output,
+    model: "CLAUDE3_5_SONNET"
   };
 
   let client = new ChatClient(domain, token);
