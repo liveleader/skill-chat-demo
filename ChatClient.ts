@@ -21,6 +21,8 @@ export interface ChatOptions {
 
   model?: string;
 
+  outputTokens?: number;
+
 }
 
 // The sources used on a chat message
@@ -97,6 +99,9 @@ export class Chat {
     });
     onDone();
     let data: any = await response.json();
+    if (!data.message) {
+      throw new Error("Error: " + data);
+    }
     let finalMessage = data.message as ChatMessage;
 
     if (!responseMsg.content) {
@@ -208,7 +213,8 @@ async function demo() {
     skillId: skillId,
     // partnerId: "1234",
     onResponse: output,
-    model: "CLAUDE3_5_SONNET"
+    model: "CLAUDE3_5_SONNET",
+    outputTokens: 100  // Keep this within the model's limits
   };
 
   let client = new ChatClient(domain, token);
